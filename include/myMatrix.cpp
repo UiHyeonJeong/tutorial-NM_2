@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------\
 @ Numerical Methods by Young-Keun Kim - Handong Global University
 
-Author           : [YOUR NAME]
-Created          : 26-03-2018
-Modified         : 18-03-2021
+Author           : UiHyoen-Jeong
+Created          : 12-05-2021
+Modified         : 16-05-2021
 Language/ver     : C++ in MSVS2019
 
 Description      : myMatrix.cpp
@@ -21,7 +21,7 @@ Matrix	createMat(int _rows, int _cols)
 		printf("\n  ERROR!!: dimension error at 'createMat' function");
 		printf("\n****************************************************\n");
 		return createMat(0, 0);
-	}		
+	}
 
 	Matrix Out;
 	// 1. Allocate row array first
@@ -104,6 +104,27 @@ void	initMat(Matrix _A, double _val)
 			_A.at[i][j] = _val;
 }
 
+// Create identity 
+Matrix	eye(int _rows, int _cols) {
+	Matrix Out = createMat(_rows, _cols);
+	initMat(Out, 0);
+	int i = 0;
+	for (int i = 0; i < Out.rows; i++)
+		Out.at[i][i] = 1;
+
+	return Out;
+}
+
+
+// Copy matrix Elements from A to B
+void copyVal(Matrix _A, Matrix _B)
+{
+	int i, j = 0;
+	for (int i = 0; i < _A.rows; i++)
+		for (int j = 0; j < _A.cols; j++)
+			_B.at[i][j] = _A.at[i][j];
+}
+
 // Create matrix of all zeros
 Matrix	zeros(int _rows, int _cols)
 {
@@ -112,3 +133,33 @@ Matrix	zeros(int _rows, int _cols)
 
 	return Out;
 }
+
+// Create Transpose matrix
+extern	Matrix	transpose(Matrix _A) {
+	Matrix Out = createMat(_A.cols, _A.rows);
+	int i, j = 0;
+	for (i = 0; i < _A.rows; i++) {
+		for (j = 0; j < _A.cols; j++) {
+			Out.at[j][i] = _A.at[i][j];
+		}
+	}
+	return Out;
+}
+
+// Create a matrix from 1D-array
+Matrix	arr2Mat(double* _1Darray, int _rows, int _cols)
+{
+	Matrix Output = createMat(_rows, _cols);
+
+	for (int i = 0; i < _rows; i++)
+		for (int j = 0; j < _cols; j++)
+			Output.at[i][j] = _1Darray[i * _cols + j];
+
+	return Output;
+}
+
+
+
+
+
+

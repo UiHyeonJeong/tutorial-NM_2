@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------\
 @ Numerical Methods by Young-Keun Kim - Handong Global University
 
-Author           : [YOUR NAME]
-Created          : 26-03-2018
-Modified         : 18-03-2021
+Author           : UiHyoen-Jeong
+Created          : 12-05-2021
+Modified         : 17-05-2021
 Language/ver     : C++ in MSVS2019
 
 Description      : myNM.cpp
@@ -11,39 +11,70 @@ Description      : myNM.cpp
 
 #include "myNM.h"
 
+// Return the dy/dx results for the input data. (truncation error: O(h^2))
+Matrix	gradient(Matrix _x, Matrix _y) {
 
-// Matrix addition
-Matrix	addMat(Matrix _A, Matrix _B)
-{
-	if (_A.rows != _B.rows || _A.cols != _B.cols) {
-		printf("\n*************************************************");
-		printf("\n  ERROR!!: dimension error at 'addMat' function");
-		printf("\n*************************************************\n");
-		return createMat(0, 0);
+	int m = _x.rows - 1;
+	int n = _y.rows - 1;
+
+	//error check
+	if (m != n) {
+		printf("Error:size of Matrix x, Matrix y is not same\n");
+		system("pause");
 	}
 
-	Matrix Out = createMat(_A.rows, _B.cols);
-	for (int i = 0; i < _A.rows; i++)
-		for (int j = 0; j < _B.cols; j++)
-			Out.at[i][j] = _A.at[i][j] + _B.at[i][j];
+	double h = _x.at[1][0] - _x.at[0][0]; //Assumption constant h
+	int i = 0;
 
+	Matrix Out = createMat(_y.rows, 1);
+
+	if (n > 2) {
+		//3 point forward difference
+		Out.at[0][0] = (-3 * _y.at[0][0] + 4 * _y.at[1][0] - _y.at[2][0]) / (2 * h);
+		//2 point central difference
+		for (i = 1; i < _y.rows - 1; i++) {
+			Out.at[i][0] = (_y.at[i + 1][0] - _y.at[i - 1][0]) / (2 * h);
+		}
+		//3 point backward difference
+		Out.at[m][0] = (_y.at[m - 2][0] - 4 * _y.at[m - 1][0] + 3 * _y.at[m][0]) / (2 * h);
+	}
+	if(n == 2) {
+		 Out.at[0][0]=(_y.at[1][0] - _y.at[0][0]) / ( 2 * h); //use 2 point forward difference
+		 Out.at[1][0]=(_y.at[1][0] - _y.at[0][0]) / (2 * h); //use 2point backward difference
+	}
 	return Out;
 }
 
-// Apply back-substitution
-Matrix	backSub(Matrix _A, Matrix _b)
-{
-	Matrix Out = createMat(_b.rows, 1);
 
-	// error check: whether _A is a triangular matrix
-	for (int i = _A.rows-1; i >= 0; i--) {
-		double temp = 0;
-		for (int j = i + 1; j < _A.cols; j++)
-			temp += _A.at[i][j] * Out.at[j][0];
-		Out.at[i][0] = (_b.at[i][0] - temp) / _A.at[i][i];
+//Find dy/dx results for the input data. (truncation error: O(h^2))
+void gradient1D(double _x[], double _y[], double _dydx[], int m) {
+
+	Matrix y = arr2Mat(_y, m, 1);
+	int n = y.rows;
+
+	if (m != n) {
+		printf("Error:size of Matrix x, Matrix y is not same\n");
+		system("pause");
 	}
 
-	return Out;
+	double h = _x[1] - _x[0]; //Assumption constant h
+	int i = 0;
+
+	if (n > 2) {
+		//3 point forward difference
+		_dydx[0] = (-3 * _y[0] + 4 * _y[1] - _y[2]) / (2 * h);
+		//2 point central difference
+		for (i = 1; i <n- 1; i++) {
+			_dydx[i]= (_y[i + 1] - _y[i - 1]) / (2 * h);
+		}
+		//3 point backward difference
+		_dydx[m - 1] = (_y[m - 3] - 4 * _y[m - 2] + 3 * _y[m - 1]) / (2 * h);
+	}
+	if (n == 2) {
+		_dydx[0] = (_y[1] - _y[0]) / (2 * h);//use 2 point forward difference
+		_dydx[1] = (_y[1] - _y[0]) / (2 * h);//use 2point backward difference
+	}
+	
 }
 
 
@@ -51,33 +82,48 @@ Matrix	backSub(Matrix _A, Matrix _b)
 Matrix	gradientFunc(double func(const double x), Matrix xin) {
 
 	int n = xin.rows;
+	int i = 0;
 
-	Matrix yin = createMat(n, 1);
-	for (int i = 0; i < n; i++)
-		yin.at[i][0] = func(xin.at[i][0]);
+	Matrix y = createMat(n, 1);
+	Matrix df = createMat(n, 1);
 
-	return gradient(xin, yin);
+	//define y[0] to y[n-1]
+	for (int i = 0; i < n; i++) {
+		y.at[i][0] = func(xin.at[i][0]);
+	}
+
+	//numerical deifferentiation
+	return gradient(xin, y);
 }
 
+//Modify newtonraphson function to pass functions as input
+double newtonRaphsonFunc(double func(const double x), double dfunc(const double x), double _x0, double _tol) {
+	
+	/************      Variables declaration & initialization      ************/
+	int k = 1;
+	int Nmax = 100;
+	double x = _x0;
+	double  ep = 100;
+	double xn = 0;
+	double  h = 0;
 
-// Return the dy/dx results for the input data. (truncation error: O(h^2))
-Matrix	gradient(Matrix _x, Matrix _y) {
+	/************      First iteration and values     ************/
+	xn = x;
+	ep = fabs(func(xn));
+	printf("Iteration:%d \t", 0);
+	printf("X(n): %lf \t", xn);
+	printf("Tolerance: %lf\n", ep);
 
-	if (_x.rows != _y.rows || _x.rows < 3) {
-		printf("ERROR: The number of elements in x must be the same as in y.\n");
-		return createMat(0, 0);
+	/************     Repeat until condition unsatisfied    ************/
+	while (k<Nmax && ep>_tol) {
+		h = -func(xn) / dfunc(xn);
+		xn = xn + h;
+		ep = fabs(func(xn));
+
+		printf("Iteration:%d \t", k);
+		printf("X(n): %lf \t", xn);
+		printf("Tolerance: %lf\n", ep);
+		k++;
 	}
-
-	else {
-		int n = _x.rows;
-		Matrix dydx = createMat(n, 1);
-		double h = _x.at[1][0] - _x.at[0][0];
-
-		dydx.at[0][0] = (-3 * _y.at[0][0] + 4 * _y.at[1][0] - _y.at[2][0]) / (2 * h);
-		for (int i = 1; i < n - 1; i++)
-			dydx.at[i][0] = (_y.at[i + 1][0] - _y.at[i - 1][0]) / (2 * h);
-		dydx.at[n - 1][0] = (_y.at[n - 3][0] - 4 * _y.at[n - 2][0] + 3 * _y.at[n - 1][0]) / (2 * h);
-
-		return dydx;
-	}
+	return xn;
 }
