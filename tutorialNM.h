@@ -15,6 +15,10 @@ Description      : myNM.h
 #include "myMatrix.h"
 
 // Tutorial
+
+//new function added
+void graduent(double xin[])
+
 // Initial contents
 void printArray(double xin[]);
 
